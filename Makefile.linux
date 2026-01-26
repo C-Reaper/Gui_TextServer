@@ -22,10 +22,13 @@ $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 
 debug:
-	gdb ./$(TARGET)
+	gdb ./$(SERVER)
 
 exe:
-	./$(TARGET)
+	./$(SERVER)
+
+client:
+	./$(CLIENT)
 
 clean:
 	rm -rf $(BUILD_DIR)/*

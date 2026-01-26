@@ -31,11 +31,11 @@ void Setup(AlxWindow* w){
 
 	tb = TextBox_New(
 		Input_New(100,1),
-		(Rect){ 0.0f,0.0f,w->Width,w->Height / 15 },
+		(Rect){ 0.0f,w->Height * 9 / 10,w->Width,w->Height / 10 },
 		ALXFONT_PATHS_BLOCKY,
-		16,
-		16,
-		WHITE
+		32,
+		32,
+		BLACK
 	);
 }
 void Update(AlxWindow* w){
@@ -44,13 +44,13 @@ void Update(AlxWindow* w){
 	if(Stroke(ALX_KEY_ENTER).PRESSED){
 		CStr out = String_CStr(&tb.In.Buffer);
 
-		if(CStr_Cmp(out,"exit"))
-			w->Running = 0;
-
         Server_Signal_Send(&s,SIGNAL_MSG,out,tb.In.Buffer.size + 1);
+        CStr_Free(&out);
+
+        String_Clear(&tb.In.Buffer);
 	}
 
-	Clear(BLACK);
+	Clear(WHITE);
 
 	TextBox_Render(WINDOW_STD_ARGS,&tb);
 }
@@ -60,7 +60,7 @@ void Delete(AlxWindow* w){
 }
 
 int main(){
-    if(Create("",2200,1200,1,1,Setup,Update,Delete))
+    if(Create("Text:Server",1000,1000,1,1,Setup,Update,Delete))
         Start();
     return 0;
 }
