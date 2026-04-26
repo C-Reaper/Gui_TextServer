@@ -1,33 +1,43 @@
-# Project
+## Project README
 
-A brief description of what your project does and its purpose.
+### Overview
+This project is a simple TCP client-server application designed for communication between a client and a server. The client can send messages to the server, which then broadcasts these messages to all connected clients.
 
----
+### Features
+- **Client**: Connects to a server on port 5000 and sends/receives messages.
+- **Server**: Listens on port 5000 for incoming connections and broadcasts received messages to all connected clients.
 
-## Table of Contents
+## Project Structure
 
-- [Installation](#installation)  
-Clone the repo
-- [License](#license)  
-GNU Public License 3.0
-- [Contact](#contact)  
-https://github.com/C-Reaper
----
+### Prerequisites
+- C/C++ Compiler (GCC)
+- Make utility
 
-## Installation
+## Build & Run
 
-How to install and set up your project:
+To build the project, navigate to the project directory and run:
 
-```bash
-# Example installation commands
-git clone https://github.com/C-Reaper/<repo>.git
-cd <repo>
-# just build
-make all
-# build and run
-make do
-# run after build
-make exe
-# clean build
-make clean
+```sh
+make -f Makefile.linux all  # For Linux
+make -f Makefile.windows all  # For Windows
+make -f Makefile.wine all  # For Linux cross compile for Windows
+make -f Makefile.web all  # For Webassembly for Emscripten or wasmtime
 ```
+
+To execute the application, use:
+
+```sh
+make -f Makefile.linux exe  # For Linux
+make -f Makefile.windows exe  # For Windows
+make -f Makefile.wine exe  # For Linux cross compile for Windows
+make -f Makefile.web exe  # For Webassembly for Emscripten or wasmtime
+```
+
+---
+
+### Additional Information
+
+- **Client**: The client application can be executed directly from the `build` directory.
+- **Server**: The server application requires interaction via a command line interface to start listening and handling connections.
+
+This README provides a clear guide on how to build and run the project, ensuring that all necessary steps are covered for each target platform.
