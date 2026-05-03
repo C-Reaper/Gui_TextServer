@@ -12,23 +12,23 @@ TextBox tb;
 TextBox nametb;
 String buffer;
 
-void Client_Proc_Connect(void* parent,Signal sig,Client* c,void* data,int size){
+void Client_Proc_Connect(void* parent,Signal sig,Client* c,void* data,PackageSize size){
     String_Appendf(&text.In.Buffer,"[%d]: Connect!\n",c->sockfd);
     Client_Signal_Send(c,SIGNAL_CONNECT,NULL,0);
 }
-void Client_Proc_Disconnect(void* parent,Signal sig,Client* c,void* data,int size){
+void Client_Proc_Disconnect(void* parent,Signal sig,Client* c,void* data,PackageSize size){
     String_Appendf(&text.In.Buffer,"[%d]: Disconnect!\n",c->sockfd);
     Client_Signal_Send(c,SIGNAL_DISCONNECT,NULL,0);
 }
-void Client_Proc_Msg(void* parent,Signal sig,Client* c,void* data,int size){
+void Client_Proc_Msg(void* parent,Signal sig,Client* c,void* data,PackageSize size){
     String_Appendf(&text.In.Buffer,"%s\n",(char*)data);
 }
 
 void Setup(AlxWindow* w){
 	c = Client_Make("5000","192.168.2.99",(SignalHandler[]){
-        SignalHandler_New(SIGNAL_CONNECT,(void (*)(void*,Signal,void*,void*,int))Client_Proc_Connect),
-        SignalHandler_New(SIGNAL_DISCONNECT,(void (*)(void*,Signal,void*,void*,int))Client_Proc_Disconnect),
-        SignalHandler_New(SIGNAL_MSG,(void (*)(void*,Signal,void*,void*,int))Client_Proc_Msg),
+        SignalHandler_New(SIGNAL_CONNECT,(void (*)(void*,Signal,void*,void*,PackageSize))Client_Proc_Connect),
+        SignalHandler_New(SIGNAL_DISCONNECT,(void (*)(void*,Signal,void*,void*,PackageSize))Client_Proc_Disconnect),
+        SignalHandler_New(SIGNAL_MSG,(void (*)(void*,Signal,void*,void*,PackageSize))Client_Proc_Msg),
         SignalHandler_Null()
     });
 

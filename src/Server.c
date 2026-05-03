@@ -4,13 +4,13 @@
 
 #define SIGNAL_MSG  (SIGNAL_START + 0)
 
-void Server_Proc_Connect(Server* s,Signal sig,Client* c,void* data,int size){
+void Server_Proc_Connect(Server* s,Signal sig,Client* c,void* data,PackageSize size){
     printf("Server_Connect: %d\n",c->sockfd);
 }
-void Server_Proc_Disconnect(Server* s,Signal sig,Client* c,void* data,int size){
+void Server_Proc_Disconnect(Server* s,Signal sig,Client* c,void* data,PackageSize size){
     printf("Server_Disconnect: %d\n",c->sockfd);
 }
-void Server_Proc_Msg(Server* s,Signal sig,Client* c,void* data,int size){
+void Server_Proc_Msg(Server* s,Signal sig,Client* c,void* data,PackageSize size){
     printf("Server_Msg: %d -> '%s' (%d)\n",c->sockfd,(char*)data,size);
     //Server_Signal_SendExcept(s,(Client*[]){ c },1U,SIGNAL_MSG,data,size);
     Server_Signal_Send(s,SIGNAL_MSG,data,size);
@@ -18,9 +18,9 @@ void Server_Proc_Msg(Server* s,Signal sig,Client* c,void* data,int size){
 
 int main(){
     Server s = Server_Make(5000,10,(SignalHandler[]){
-        SignalHandler_New(SIGNAL_CONNECT,(void (*)(void*,Signal,void*,void*,int))Server_Proc_Connect),
-        SignalHandler_New(SIGNAL_DISCONNECT,(void (*)(void*,Signal,void*,void*,int))Server_Proc_Disconnect),
-        SignalHandler_New(SIGNAL_MSG,(void (*)(void*,Signal,void*,void*,int))Server_Proc_Msg),
+        SignalHandler_New(SIGNAL_CONNECT,(void (*)(void*,Signal,void*,void*,PackageSize))Server_Proc_Connect),
+        SignalHandler_New(SIGNAL_DISCONNECT,(void (*)(void*,Signal,void*,void*,PackageSize))Server_Proc_Disconnect),
+        SignalHandler_New(SIGNAL_MSG,(void (*)(void*,Signal,void*,void*,PackageSize))Server_Proc_Msg),
         SignalHandler_Null()
     });
 
