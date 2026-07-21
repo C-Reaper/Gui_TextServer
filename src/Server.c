@@ -1,43 +1,44 @@
 #include "/home/codeleaded/System/Static/Library/CStr.h"
-#include "/home/codeleaded/System/Static/Library/Networking.h"
+#include "/home/codeleaded/System/Static/Library/Networking_Event.h"
 
 
-#define SIGNAL_MSG  (SIGNAL_START + 0)
+#define NET_EVENT_MSG  (NET_EVENT_START + 0)
 
-void Server_Proc_Connect(Server* s,Signal sig,Client* c,void* data,PackageSize size){
-    printf("Server_Connect: %d\n",c->sockfd);
+void Net_EventServer_Proc_Connect(Net_EventServer* s,Net_EventClient* c,Net_EventPackage* p){
+    printf("[Net_EventServer]: Connect -> %d\n",(uint32_t)Net_Client_Id(&c->client));
 }
-void Server_Proc_Disconnect(Server* s,Signal sig,Client* c,void* data,PackageSize size){
-    printf("Server_Disconnect: %d\n",c->sockfd);
+void Net_EventServer_Proc_Disconnect(Net_EventServer* s,Net_EventClient* c,Net_EventPackage* p){
+    printf("[Net_EventServer]: Disconnect -> %d\n",(uint32_t)Net_Client_Id(&c->client));
 }
-void Server_Proc_Msg(Server* s,Signal sig,Client* c,void* data,PackageSize size){
-    printf("Server_Msg: %d -> '%s' (%d)\n",c->sockfd,(char*)data,size);
-    //Server_Signal_SendExcept(s,(Client*[]){ c },1U,SIGNAL_MSG,data,size);
-    Server_Signal_Send(s,SIGNAL_MSG,data,size);
+void Net_EventServer_Proc_Msg(Net_EventServer* s,Net_EventClient* c,Net_EventPackage* p){
+    printf("[Net_EventServer]: Msg -> %u: '%s' (%u)\n",(uint32_t)Net_Client_Id(&c->client),(char*)p->pack.data,(uint32_t)p->pack.size);
+    Net_EventServer_Send(s,p->net_event,p->pack.data,p->pack.size);
 }
 
 int main(){
-    Server s = Server_Make(5000,10,(SignalHandler[]){
-        SignalHandler_New(SIGNAL_CONNECT,(void (*)(void*,Signal,void*,void*,PackageSize))Server_Proc_Connect),
-        SignalHandler_New(SIGNAL_DISCONNECT,(void (*)(void*,Signal,void*,void*,PackageSize))Server_Proc_Disconnect),
-        SignalHandler_New(SIGNAL_MSG,(void (*)(void*,Signal,void*,void*,PackageSize))Server_Proc_Msg),
-        SignalHandler_Null()
+    Net_EventServer s = Net_EventServer_Make(5000,10,(Net_EventHandler[]){
+        Net_EventHandler_New(NET_EVENT_CONNECT,    (void(*)(void*,Net_EventClient*,Net_EventPackage*))Net_EventServer_Proc_Connect),
+        Net_EventHandler_New(NET_EVENT_DISCONNECT, (void(*)(void*,Net_EventClient*,Net_EventPackage*))Net_EventServer_Proc_Disconnect),
+        Net_EventHandler_New(NET_EVENT_MSG,        (void(*)(void*,Net_EventClient*,Net_EventPackage*))Net_EventServer_Proc_Msg),
+        Net_EventHandler_Null()
     });
 
-    Server_Start_C(&s);
-    Server_Start_R(&s);
+    Net_EventServer_Start_C(&s);
+    Net_EventServer_Start_R(&s);
+    //Net_EventServer_Wait(&s);
 
     while(1){
-        printf("[Server]: Cmd -> ");
-        fflush(stdout);
-        
         char buffer[1024];
         int size = scanf("%1023s",buffer);
         
-        if(CStr_Cmp(buffer,"exit"))
+        if(CStr_Cmp(buffer,"exit")){
             break;
+        }else{
+            Net_EventServer_Send(&s,NET_EVENT_MSG,buffer,CStr_Size(buffer) + 1);
+            Thread_Sleep_M(100);
+        }
     }
 
-    Server_Free(&s);
+    Net_EventServer_Free(&s);
     return 0;
 }
