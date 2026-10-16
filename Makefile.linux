@@ -3,8 +3,13 @@
 CC = gcc
 WARNINGS = -Werror
 CFLAGS = -O0 -mavx2 -std=gnu17 $(WARNINGS)
-INCLUDES = -Isrc
+SYSTEM_ROOT ?= ../../../System
+INCLUDES = -Isrc -I$(SYSTEM_ROOT)/Static/Library
 LDFLAGS = -lm -lX11 -lpng -ljpeg
+SERVER_HOST ?= 192.168.178.99
+SERVER_PORT ?= 5000
+SERVER_PORT_DEFINE = -DNET_SERVER_PORT='"$(SERVER_PORT)"'
+CLIENT_DEFINES = -DNET_SERVER_HOST='"$(SERVER_HOST)"' $(SERVER_PORT_DEFINE)
 SRC_DIR = src
 BUILD_DIR = build
 
@@ -12,12 +17,12 @@ SERVER = $(BUILD_DIR)/Server
 CLIENT = $(BUILD_DIR)/Client
 
 all: $(BUILD_DIR)
-	$(CC) $(CFLAGS) $(INCLUDES) $(SRC_DIR)/Server.c -o $(SERVER) $(LDFLAGS) 
-	$(CC) $(CFLAGS) $(INCLUDES) $(SRC_DIR)/Client.c -o $(CLIENT) $(LDFLAGS) 
+	$(CC) $(CFLAGS) $(INCLUDES) $(SERVER_PORT_DEFINE) $(SRC_DIR)/Server.c -o $(SERVER) $(LDFLAGS)
+	$(CC) $(CFLAGS) $(INCLUDES) $(CLIENT_DEFINES) $(SRC_DIR)/Client.c -o $(CLIENT) $(LDFLAGS)
 
 alldebug:
-	$(CC) -g $(CFLAGS) $(INCLUDES) $(SRC_DIR)/Server.c -o $(SERVER) $(LDFLAGS) 
-	$(CC) -g $(CFLAGS) $(INCLUDES) $(SRC_DIR)/Client.c -o $(CLIENT) $(LDFLAGS) 
+	$(CC) -g $(CFLAGS) $(INCLUDES) $(SERVER_PORT_DEFINE) $(SRC_DIR)/Server.c -o $(SERVER) $(LDFLAGS)
+	$(CC) -g $(CFLAGS) $(INCLUDES) $(CLIENT_DEFINES) $(SRC_DIR)/Client.c -o $(CLIENT) $(LDFLAGS)
 
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)

@@ -3,31 +3,39 @@
 CC = x86_64-w64-mingw32-gcc
 WARNINGS = -Werror
 CFLAGS = -O0 -mavx2 -std=gnu17 $(WARNINGS)
-INCLUDES = -Isrc -D_WINE
-LDFLAGS = -lm -luser32 -lgdi32 -lwinmm -lole32 -loleaut32 -lwindowscodecs
-SRC_DIR = ./src
-BUILD_DIR = ./build
-TARGET = $(BUILD_DIR)/Main.exe
+SYSTEM_ROOT ?= ../../../System
+INCLUDES = -Isrc -I$(SYSTEM_ROOT)/Static/Library -D_WINE
+LDFLAGS = -lm -luser32 -lgdi32 -lwinmm -lxinput9_1_0 -lole32 -loleaut32 -lwindowscodecs -lmfplat -lmf -lmfreadwrite -lmfuuid -lws2_32 -lshlwapi
+SERVER_HOST ?= 192.168.178.99
+SERVER_PORT ?= 5000
+SERVER_PORT_DEFINE = -DNET_SERVER_PORT='"$(SERVER_PORT)"'
+CLIENT_DEFINES = -DNET_SERVER_HOST='"$(SERVER_HOST)"' $(SERVER_PORT_DEFINE)
 
-SRCS = $(wildcard $(SRC_DIR)/*.c)
-OBJS = $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o, $(SRCS))
+SRC_DIR = src
+BUILD_DIR = build
 
-all: $(BUILD_DIR) $(TARGET)
+SERVER = $(BUILD_DIR)/Server.exe
+CLIENT = $(BUILD_DIR)/Client.exe
 
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 
-$(TARGET): $(SRCS)
-	$(CC) $(CFLAGS) $(INCLUDES) $(SRCS) -o $(TARGET) $(LDFLAGS)
+all: $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(INCLUDES) $(SERVER_PORT_DEFINE) $(SRC_DIR)/Server.c -o $(SERVER) $(LDFLAGS)
+	$(CC) $(CFLAGS) $(INCLUDES) $(CLIENT_DEFINES) $(SRC_DIR)/Client.c -o $(CLIENT) $(LDFLAGS)
 
-alldebug: 
-	$(CC) -g $(CFLAGS) $(INCLUDES) $(SRC_DIR)/Main.c -o $(TARGET) $(LDFLAGS) 
+alldebug:
+	$(CC) -g $(CFLAGS) $(INCLUDES) $(SERVER_PORT_DEFINE) $(SRC_DIR)/Server.c -o $(SERVER) $(LDFLAGS)
+	$(CC) -g $(CFLAGS) $(INCLUDES) $(CLIENT_DEFINES) $(SRC_DIR)/Client.c -o $(CLIENT) $(LDFLAGS)
 
 debug:
-	WINEPREFIX=~/wine64 WINEARCH=win64 winedbg $(TARGET)
+	WINEPREFIX=~/wine64 WINEARCH=win64 winedbg $(SERVER)
 
-exe: $(TARGET)
-	WINEPREFIX=~/wine64 WINEARCH=win64 wine $(TARGET)
+exe: $(SERVER)
+	WINEPREFIX=~/wine64 WINEARCH=win64 wine $(SERVER)
+
+client:
+	WINEPREFIX=~/wine64 WINEARCH=win64 wine $(CLIENT)
 
 clean:
 	rm -f $(BUILD_DIR)/*

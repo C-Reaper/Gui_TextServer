@@ -1,31 +1,72 @@
 # === Makefile.web ===
 
 CC = emcc
+HOST_CC = gcc
+HOST_LDFLAGS = -lm
 WARNINGS = -Werror
-CFLAGS = -O0 -msimd128 -mavx2 -std=gnu17 $(WARNINGS)
-INCLUDES = -Isrc -D_WEB -sINITIAL_MEMORY=169082880
-LDFLAGS = -s USE_SDL=0
+CFLAGS = -O0 -std=gnu17 $(WARNINGS)
+SERVER_HOST ?= 192.168.178.99
+SERVER_PORT ?= 5000
+SERVER_PORT_DEFINE = -DNET_SERVER_PORT='"$(SERVER_PORT)"'
+CLIENT_DEFINES = -DNET_SERVER_HOST='"$(SERVER_HOST)"' $(SERVER_PORT_DEFINE)
+WEB_CFLAGS = $(CFLAGS) -msimd128 -mavx2 -pthread $(CLIENT_DEFINES) -DNET_EMSCRIPTEN_PROXY_URL='"$(WEB_PROXY_URL)"'
+HOST_CFLAGS = $(CFLAGS) -mavx2 -pthread
+SYSTEM_ROOT ?= ../../../System
+INCLUDES = -Isrc -I$(SYSTEM_ROOT)/Static/Library
+WEB_INCLUDES = $(INCLUDES) -D_WEB --preload-file assets/
+WEB_LDFLAGS = -pthread -sPROXY_TO_PTHREAD -sPROXY_POSIX_SOCKETS -sPTHREAD_POOL_SIZE=2 \
+	-sINITIAL_MEMORY=169082880 -s USE_SDL=0 -lwebsocket.js
 SRC_DIR = ./src
 BUILD_DIR = ./build
-TARGET = $(BUILD_DIR)/index.html
+SERVER = $(BUILD_DIR)/Server
+CLIENT = $(BUILD_DIR)/Client.html
+EMSDK_ROOT ?= $(shell dirname $$(dirname $$(dirname $$(command -v emcc))))
+CMAKE ?= $(shell command -v cmake)
+POSIX_PROXY_SOURCE = $(EMSDK_ROOT)/upstream/emscripten/tools/websocket_to_posix_proxy
+POSIX_PROXY_BUILD = $(BUILD_DIR)/websocket_to_posix_proxy
+POSIX_PROXY = $(POSIX_PROXY_BUILD)/websocket_to_posix_proxy
+POSIX_PROXY_PORT ?= 8081
+WEB_PORT ?= 8080
+WEB_PROXY_URL ?= ws://localhost:$(POSIX_PROXY_PORT)
 
-SRCS = $(wildcard $(SRC_DIR)/*.c)
-OBJS = $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o, $(SRCS))
-
-all: $(BUILD_DIR) $(TARGET)
+all: $(SERVER) $(CLIENT)
 
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 
-$(TARGET): $(SRCS)
-	$(CC) $(CFLAGS) $(INCLUDES) $(SRCS) -o $(TARGET) $(LDFLAGS)
+$(SERVER): $(SRC_DIR)/Server.c force | $(BUILD_DIR)
+	$(HOST_CC) $(HOST_CFLAGS) $(INCLUDES) $(SERVER_PORT_DEFINE) $< -o $@ $(HOST_LDFLAGS)
 
-exe: $(TARGET)
-	emrun --no_browser --port 8080 $(BUILD_DIR)
+$(CLIENT): $(SRC_DIR)/Client.c force | $(BUILD_DIR)
+	$(CC) $(WEB_CFLAGS) $(WEB_INCLUDES) $< -o $@ $(WEB_LDFLAGS)
+
+proxy-build: | $(BUILD_DIR)
+	$(CMAKE) -S $(POSIX_PROXY_SOURCE) -B $(POSIX_PROXY_BUILD)
+	$(CMAKE) --build $(POSIX_PROXY_BUILD)
+
+proxy: proxy-build
+	$(POSIX_PROXY) $(POSIX_PROXY_PORT)
+
+exe: $(SERVER)
+	./$(SERVER)
+
+client: $(CLIENT) proxy-build
+	@$(POSIX_PROXY) $(POSIX_PROXY_PORT) & \
+	proxy_pid=$$!; \
+	trap 'kill $$proxy_pid 2>/dev/null || true' EXIT INT TERM; \
+	emrun --port $(WEB_PORT) $(CLIENT)
+
+client-page: $(CLIENT)
+	emrun --port $(WEB_PORT) $(CLIENT)
 
 clean:
-	rm -f $(BUILD_DIR)/*
+	rm -f $(SERVER) $(CLIENT) $(BUILD_DIR)/Client.js $(BUILD_DIR)/Client.wasm
+	rm -rf $(POSIX_PROXY_BUILD)
 
 do: clean all exe
+
+.PHONY: all proxy-build proxy exe client client-page clean do force
+
+force:
 
 # === Makefile.web ===

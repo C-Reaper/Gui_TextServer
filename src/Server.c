@@ -1,6 +1,9 @@
-#include "/home/codeleaded/System/Static/Library/CStr.h"
 #include "/home/codeleaded/System/Static/Library/Networking_Event.h"
+#include "/home/codeleaded/System/Static/Library/CStr.h"
 
+#ifndef NET_SERVER_PORT
+#define NET_SERVER_PORT "5000"
+#endif
 
 #define NET_EVENT_MSG  (NET_EVENT_START + 0)
 
@@ -11,12 +14,15 @@ void Net_EventServer_Proc_Disconnect(Net_EventServer* s,Net_EventClient* c,Net_E
     printf("[Net_EventServer]: Disconnect -> %d\n",(uint32_t)Net_Client_Id(&c->client));
 }
 void Net_EventServer_Proc_Msg(Net_EventServer* s,Net_EventClient* c,Net_EventPackage* p){
-    printf("[Net_EventServer]: Msg -> %u: '%s' (%u)\n",(uint32_t)Net_Client_Id(&c->client),(char*)p->pack.data,(uint32_t)p->pack.size);
+    CStr msg = CStr_By(p->pack.data,p->pack.size);
+    printf("[Net_EventServer]: Msg -> %u: '%s' (%u)\n",(uint32_t)Net_Client_Id(&c->client),msg,(uint32_t)p->pack.size);
+    CStr_Free(&msg);
+
     Net_EventServer_Send(s,p->net_event,p->pack.data,p->pack.size);
 }
 
 int main(){
-    Net_EventServer s = Net_EventServer_Make(5000,10,(Net_EventHandler[]){
+    Net_EventServer s = Net_EventServer_Make(atoi(NET_SERVER_PORT),10,(Net_EventHandler[]){
         Net_EventHandler_New(NET_EVENT_CONNECT,    (void(*)(void*,Net_EventClient*,Net_EventPackage*))Net_EventServer_Proc_Connect),
         Net_EventHandler_New(NET_EVENT_DISCONNECT, (void(*)(void*,Net_EventClient*,Net_EventPackage*))Net_EventServer_Proc_Disconnect),
         Net_EventHandler_New(NET_EVENT_MSG,        (void(*)(void*,Net_EventClient*,Net_EventPackage*))Net_EventServer_Proc_Msg),
