@@ -7,6 +7,7 @@ WARNINGS = -Werror
 CFLAGS = -O0 -std=gnu17 $(WARNINGS)
 SERVER_HOST ?= 192.168.178.99
 SERVER_PORT ?= 5000
+
 SERVER_PORT_DEFINE = -DNET_SERVER_PORT='"$(SERVER_PORT)"'
 CLIENT_DEFINES = -DNET_SERVER_HOST='"$(SERVER_HOST)"' $(SERVER_PORT_DEFINE)
 WEB_CFLAGS = $(CFLAGS) -msimd128 -mavx2 -pthread $(CLIENT_DEFINES) -DNET_EMSCRIPTEN_PROXY_URL='"$(WEB_PROXY_URL)"'
@@ -14,12 +15,14 @@ HOST_CFLAGS = $(CFLAGS) -mavx2 -pthread
 SYSTEM_ROOT ?= ../../../System
 INCLUDES = -Isrc -I$(SYSTEM_ROOT)/Static/Library
 WEB_INCLUDES = $(INCLUDES) -D_WEB --preload-file assets/
-WEB_LDFLAGS = -pthread -sPROXY_TO_PTHREAD -sPROXY_POSIX_SOCKETS -sPTHREAD_POOL_SIZE=2 \
-	-sINITIAL_MEMORY=169082880 -s USE_SDL=0 -lwebsocket.js
+WEB_LDFLAGS = -pthread -sPROXY_TO_PTHREAD -sPROXY_POSIX_SOCKETS -sPTHREAD_POOL_SIZE=2 -sINITIAL_MEMORY=169082880 -s USE_SDL=0 -lwebsocket.js
+
 SRC_DIR = ./src
 BUILD_DIR = ./build
+
 SERVER = $(BUILD_DIR)/Server
 CLIENT = $(BUILD_DIR)/Client.html
+
 EMSDK_ROOT ?= $(shell dirname $$(dirname $$(dirname $$(command -v emcc))))
 CMAKE ?= $(shell command -v cmake)
 POSIX_PROXY_SOURCE = $(EMSDK_ROOT)/upstream/emscripten/tools/websocket_to_posix_proxy
